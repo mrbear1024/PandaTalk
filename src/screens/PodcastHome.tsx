@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import {
   StyleSheet,
   View,
@@ -24,6 +25,7 @@ import CategoryChips from '../components/CategoryChips';
 import FeaturedList from '../components/FeaturedList';
 import Section from '../components/Section';
 import BottomNav from '../components/BottomNav';
+import MainLayout from '../components/MainLayout';
 
 interface Episode {
   id: string;
@@ -177,14 +179,39 @@ type RootStackParamList = {
   };
 };
 
+type TabParamList = {
+  HomeTab: undefined;
+  SearchTab: undefined;
+  LibraryTab: undefined;
+  ProfileTab: undefined;
+};
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type TabNavigationProp = BottomTabNavigationProp<TabParamList>;
 
 export default function PodcastHome() {
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const tabNavigation = useNavigation<TabNavigationProp>();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activeTab, setActiveTab] = useState('Home');
+
+  const handleTabSelect = (tab: string) => {
+    switch (tab) {
+      case 'Home':
+        tabNavigation.navigate('HomeTab');
+        break;
+      case 'Search':
+        tabNavigation.navigate('SearchTab');
+        break;
+      case 'Library':
+        tabNavigation.navigate('LibraryTab');
+        break;
+      case 'Profile':
+        tabNavigation.navigate('ProfileTab');
+        break;
+    }
+  };
 
   const renderEpisode: ListRenderItem<Episode> = ({ item }) => (
     <PaperList.Item
@@ -215,76 +242,70 @@ export default function PodcastHome() {
   );
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top','bottom']}>
-        {/* 顶部 Appbar，不需要额外 SafeArea */}
-        {/* <Appbar.Header statusBarHeight={0} style={{ backgroundColor: theme.colors.background, elevation: 0 }}>
-          <Appbar.BackAction color={theme.colors.onSurface} onPress={() => {}} />
-          <Appbar.Content title="" />
-          <Appbar.Action icon="dots-vertical" color={theme.colors.onSurface} onPress={() => {}} />
-        </Appbar.Header> */}
-
-        {/* 整页滚动使用 FlatList */}
-        <FlatList
-          data={trendingEpisodes}
-          keyExtractor={item => item.id}
-          renderItem={renderEpisode}
-          ListHeaderComponent={() => (
-            <View>
-              <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-                <Searchbar
-                  placeholder="Search"
-                  onChangeText={setSearchQuery}
-                  value={searchQuery}
-                  style={{
-                    backgroundColor: theme.colors.surface,
-                    elevation: 0,
-                  }}
-                  inputStyle={{ color: theme.colors.onSurface }}
-                  iconColor={theme.colors.onSurfaceVariant}
-                />
-              </View>
-
-              <CategoryChips
-                categories={categories}
-                selected={selectedCategory}
-                onSelect={setSelectedCategory}
-              />
-
-              <Section title="Featured Podcasts">
-                <FeaturedList 
-                  items={featuredPodcasts} 
-                  onPress={(item) => navigation.navigate('PodcastDetail', { podcast: item })}
-                />
-              </Section>
-
-              <Section
-                title="Trending Episodes"
-                onPress={() => {
-                  navigation.navigate('AllEpisodes', {
-                    title: 'Trending Episodes',
-                    episodes: trendingEpisodes
-                  });
+      <FlatList
+        data={trendingEpisodes}
+        keyExtractor={item => item.id}
+        renderItem={renderEpisode}
+        ListHeaderComponent={() => (
+          <View>
+            <View style={[styles.searchContainer, { backgroundColor: theme.colors.background }]}>
+              <Searchbar
+                placeholder="Search"
+                onChangeText={setSearchQuery}
+                value={searchQuery}
+                style={{
+                  backgroundColor: theme.colors.surface,
+                  elevation: 0,
                 }}
-              >
-               
-              </Section>
+                inputStyle={{ color: theme.colors.onSurface }}
+                iconColor={theme.colors.onSurfaceVariant}
+                onPressIn={() => tabNavigation.navigate('SearchTab')}
+              />
             </View>
-          )}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          style={{ backgroundColor: theme.colors.background }}
-        />
 
-        {/* 底部导航 */}
-        <BottomNav selected={activeTab} onSelect={setActiveTab} />
-      </SafeAreaView>
-    </>
+            <CategoryChips
+              categories={categories}
+              selected={selectedCategory}
+              onSelect={setSelectedCategory}
+            />
+
+            <Section title="Featured Podcasts">
+              <FeaturedList 
+                items={featuredPodcasts} 
+                onPress={(item) => navigation.navigate('PodcastDetail', { podcast: item })}
+              />
+            </Section>
+
+            <Section
+              title="Trending Episodes"
+              onPress={() => {
+                navigation.navigate('AllEpisodes', {
+                  title: 'Trending Episodes',
+                  episodes: trendingEpisodes
+                });
+              }}
+            >
+            </Section>
+          </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        style={{ backgroundColor: theme.colors.background }}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { 
+    flex: 1 
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
   episodeImageContainer: {
     marginLeft: 8,
     justifyContent: 'center',
@@ -295,6 +316,6 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 8,
     resizeMode: 'cover',
-    backgroundColor: '#f0f0f0', // 添加背景色以便于查看图片加载状态
+    backgroundColor: '#f0f0f0',
   }
 });
