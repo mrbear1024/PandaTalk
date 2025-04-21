@@ -18,6 +18,7 @@ import {
   useTheme,
   List as PaperList,
 } from 'react-native-paper';
+import { Asset } from 'expo-asset';
 
 import CategoryChips from '../components/CategoryChips';
 import FeaturedList from '../components/FeaturedList';
@@ -43,7 +44,7 @@ const featuredPodcasts = [
     description: 'Insights and interviews with design experts',
     duration: '45:00',
     icon: 'play-circle',
-    image: require('../../assets/sysk.png')
+    image: require('../../assets/podcast-cover.png')
   },
   { 
     id: '2', 
@@ -52,7 +53,7 @@ const featuredPodcasts = [
     description: 'Long-form conversation with interesting people',
     duration: '180:00',
     icon: 'play-circle',
-    image: require('../../assets/sysk.png')
+    image: require('../../assets/daily.png')
   },
   { 
     id: '3', 
@@ -61,7 +62,7 @@ const featuredPodcasts = [
     description: 'Educational podcast about everything',
     duration: '45:00',
     icon: 'play-circle',
-    image: require('../../assets/sysk.png')
+    image: require('../../assets/insights.png')
   },
   { 
     id: '4', 
@@ -70,7 +71,7 @@ const featuredPodcasts = [
     description: 'Latest in technology and development',
     duration: '60:00',
     icon: 'play-circle',
-    image: require('../../assets/sysk.png')
+    image: require('../../assets/history.png')
   },
 ];
 const trendingEpisodes: Episode[] = [
@@ -190,8 +191,12 @@ export default function PodcastHome() {
       title={item.title}
       description={item.podcast}
       left={props => (
-        <View style={styles.episodeImage}>
-          <Image source={item.image} style={styles.episodeImage} />
+        <View style={styles.episodeImageContainer}>
+          <Image 
+            source={item.image} 
+            style={styles.episodeImage}
+            onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
+          />
         </View>
       )}
       right={() => (
@@ -280,10 +285,16 @@ export default function PodcastHome() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  episodeImageContainer: {
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   episodeImage: {
     width: 48,
     height: 48,
     borderRadius: 8,
-    marginLeft: 8
+    resizeMode: 'cover',
+    backgroundColor: '#f0f0f0', // 添加背景色以便于查看图片加载状态
   }
 });

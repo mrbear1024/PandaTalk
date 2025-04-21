@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useTheme, Text } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 interface Episode {
@@ -25,9 +26,17 @@ interface RouteParams {
   episodes: Episode[];
 }
 
+type RootStackParamList = {
+  PodcastDetail: {
+    podcast: Episode;
+  };
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function AllEpisodes() {
   const theme = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const { title, episodes } = route.params as RouteParams;
 

@@ -6,24 +6,16 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   MD3DarkTheme,
   Provider as PaperProvider,
-  configureFonts
 } from 'react-native-paper';
 import PodcastHome from './src/screens/PodcastHome';
 import PodcastDetail from './src/screens/PodcastDetail';
 import AllEpisodes from './src/screens/AllEpisodes';
+import PlayerScreen from './src/screens/PlayerScreen';
 
 const Stack = createNativeStackNavigator();
 
-// 可选：根据需要自定义字体
-const fontConfig = {
-  ios: { regular: { fontFamily: 'System', fontWeight: '400' } },
-  android: { regular: { fontFamily: 'Roboto', fontWeight: '400' } },
-  default: { regular: { fontFamily: 'System', fontWeight: '400' } },
-};
-
 const theme = {
   ...MD3DarkTheme,
-  fonts: configureFonts(fontConfig),
   colors: {
     ...MD3DarkTheme.colors,
     primary: '#3B82F6',
@@ -51,6 +43,7 @@ export default function App() {
             <Stack.Screen name="Home" component={PodcastHome} />
             <Stack.Screen name="PodcastDetail" component={PodcastDetail} />
             <Stack.Screen name="AllEpisodes" component={AllEpisodes} />
+            <Stack.Screen name="Player" component={PlayerScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>

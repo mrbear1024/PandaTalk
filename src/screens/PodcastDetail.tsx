@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useTheme, Text, Button } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 interface Episode {
@@ -25,6 +26,20 @@ interface RouteParams {
     duration: string;
   };
 }
+
+type RootStackParamList = {
+  Player: {
+    podcast: {
+      title: string;
+      podcast: string;
+      description: string;
+      duration: string;
+      image: any;
+    };
+  };
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const episodes: Episode[] = [
   {
@@ -55,7 +70,7 @@ const episodes: Episode[] = [
 
 export default function PodcastDetail() {
   const theme = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const { podcast } = route.params as RouteParams;
   
@@ -97,6 +112,14 @@ export default function PodcastDetail() {
           <TouchableOpacity
             key={episode.id}
             style={[styles.episodeItem, { backgroundColor: theme.colors.surface }]}
+            onPress={() => navigation.navigate('Player', { 
+              podcast: {
+                ...episode,
+                podcast: podcast.title,
+                description: `Episode ${episode.title}`,
+                image: podcast.image
+              }
+            })}
           >
             <View style={styles.episodeContent}>
               <Icon name="play-circle" size={32} color={theme.colors.primary} />

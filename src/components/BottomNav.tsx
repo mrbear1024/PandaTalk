@@ -13,7 +13,7 @@ type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 const tabs = [
   { key: 'Home',    icon: 'home' as IconName },
-  { key: 'Search',  icon: 'magnify' as IconName },
+  // { key: 'Search',  icon: 'magnify' as IconName },
   { key: 'Library', icon: 'library-shelves' as IconName },
   { key: 'Profile', icon: 'account' as IconName },
 ];
