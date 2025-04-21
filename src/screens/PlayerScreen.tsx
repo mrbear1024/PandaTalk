@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Image, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
 import { Text, IconButton, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
+import TrackPlayer, { 
+  useTrackPlayerEvents, 
+  Event, 
+  State,
+  usePlaybackState,
+  Capability,
+  AppKilledPlaybackBehavior,
+  useProgress
+} from 'react-native-track-player';
 
 type PlayerScreenParams = {
   Player: {
@@ -13,6 +22,7 @@ type PlayerScreenParams = {
       description: string;
       duration: string;
       image: any;
+      audioUrl: string;
     };
   };
 };
@@ -26,10 +36,82 @@ export default function PlayerScreen() {
   const { podcast } = route.params;
   
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const playbackState = usePlaybackState();
+  const progress = useProgress();
 
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
+  useEffect(() => {
+    setupPlayer();
+    return () => {
+      TrackPlayer.reset();
+    };
+  }, []);
+
+  const setupPlayer = async () => {
+    try {
+      const state = await TrackPlayer.getState();
+      if (state === undefined) {
+        await TrackPlayer.setupPlayer({
+          autoHandleInterruptions: true,
+          waitForBuffer: true,
+        });
+        await TrackPlayer.updateOptions({
+          android: {
+            appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
+          },
+          capabilities: [
+            Capability.Play,
+            Capability.Pause,
+            Capability.SkipToNext,
+            Capability.SkipToPrevious,
+          ],
+          compactCapabilities: [
+            Capability.Play,
+            Capability.Pause,
+            Capability.SkipToNext,
+            Capability.SkipToPrevious,
+          ],
+        });
+      }
+      // Reset the queue and add new track
+      await TrackPlayer.reset();
+      await TrackPlayer.add({
+        id: '1',
+        url: podcast.audioUrl,
+        title: podcast.title,
+        artist: podcast.podcast,
+        artwork: podcast.image,
+      });
+      await TrackPlayer.play();
+    } catch (error) {
+      console.log('Error setting up player:', error);
+    }
+  };
+
+  useTrackPlayerEvents([Event.PlaybackState], (event) => {
+    if (event.type === Event.PlaybackState) {
+      setIsPlaying(event.state === State.Playing);
+    }
+  });
+
+  const togglePlayPause = async () => {
+    const state = await TrackPlayer.getState();
+    if (state === State.Playing) {
+      await TrackPlayer.pause();
+    } else {
+      await TrackPlayer.play();
+    }
+  };
+
+  const skipForward = async () => {
+    await TrackPlayer.seekTo(progress.position + 15);
+  };
+
+  const skipBackward = async () => {
+    await TrackPlayer.seekTo(progress.position - 15);
+  };
+
+  const onSeek = async (value: number) => {
+    await TrackPlayer.seekTo(value * progress.duration);
   };
 
   return (
@@ -73,8 +155,8 @@ export default function PlayerScreen() {
 
           <View style={styles.controls}>
             <Slider
-              value={progress}
-              onValueChange={setProgress}
+              value={progress.position / (progress.duration || 1)}
+              onValueChange={onSeek}
               style={styles.slider}
               minimumValue={0}
               maximumValue={1}
@@ -84,12 +166,12 @@ export default function PlayerScreen() {
             />
             
             <View style={styles.timeInfo}>
-              <Text style={styles.timeText}>6:27</Text>
-              <Text style={styles.timeText}>12:45</Text>
+              <Text style={styles.timeText}>{formatTime(progress.position)}</Text>
+              <Text style={styles.timeText}>{formatTime(progress.duration)}</Text>
             </View>
 
             <View style={styles.buttons}>
-              <TouchableOpacity style={styles.skipButton}>
+              <TouchableOpacity style={styles.skipButton} onPress={skipBackward}>
                 <Text style={styles.skipButtonText}>15</Text>
               </TouchableOpacity>
               <TouchableOpacity 
@@ -102,7 +184,7 @@ export default function PlayerScreen() {
                   iconColor="#1E1E2D"
                 />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.skipButton}>
+              <TouchableOpacity style={styles.skipButton} onPress={skipForward}>
                 <Text style={styles.skipButtonText}>30</Text>
               </TouchableOpacity>
             </View>
@@ -122,6 +204,12 @@ export default function PlayerScreen() {
     </SafeAreaView>
   );
 }
+
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+};
 
 const styles = StyleSheet.create({
   container: {

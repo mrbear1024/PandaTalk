@@ -16,6 +16,7 @@ interface Episode {
   title: string;
   date: string;
   duration: string;
+  audioUrl: string;
 }
 
 interface RouteParams {
@@ -35,6 +36,7 @@ type RootStackParamList = {
       description: string;
       duration: string;
       image: any;
+      audioUrl: string;
     };
   };
 };
@@ -46,25 +48,29 @@ const episodes: Episode[] = [
     id: '10',
     title: 'Episode 10',
     date: 'Mar 25, 2023',
-    duration: '45:00'
+    duration: '45:00',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac'
   },
   {
     id: '9',
     title: 'Episode 9',
     date: 'Mar 17, 2023',
-    duration: '42:30'
+    duration: '42:30',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac'
   },
   {
     id: '8',
     title: 'Episode 8',
     date: 'Mar 10, 2023',
-    duration: '38:15'
+    duration: '38:15',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac'
   },
   {
     id: '7',
     title: 'Episode 7',
     date: 'Mar 3, 2023',
-    duration: '41:20'
+    duration: '41:20',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac'
   },
 ];
 
@@ -117,7 +123,8 @@ export default function PodcastDetail() {
                 ...episode,
                 podcast: podcast.title,
                 description: `Episode ${episode.title}`,
-                image: podcast.image
+                image: podcast.image,
+                audioUrl: episode.audioUrl
               }
             })}
           >

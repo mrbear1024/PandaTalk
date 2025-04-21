@@ -1,5 +1,5 @@
 // App.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -19,6 +19,7 @@ import Profile from './src/screens/Profile';
 import EditProfile from './src/screens/EditProfile';
 import Login from './src/screens/Login';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import TrackPlayer from 'react-native-track-player';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -106,6 +107,13 @@ function Navigation() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const setup = async () => {
+      await TrackPlayer.setupPlayer();
+    };
+    setup();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
