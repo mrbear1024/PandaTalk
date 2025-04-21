@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Image, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
-import { Text, IconButton, useTheme } from 'react-native-paper';
+import { StyleSheet, View, Image, Dimensions, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { Text, IconButton, useTheme, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
@@ -29,6 +29,8 @@ type PlayerScreenParams = {
 
 const { width } = Dimensions.get('window');
 
+const PLAYBACK_SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
 export default function PlayerScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -38,6 +40,8 @@ export default function PlayerScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const playbackState = usePlaybackState();
   const progress = useProgress();
+  const [speed, setSpeed] = useState(1.0);
+  const [showSpeedModal, setShowSpeedModal] = useState(false);
 
   useEffect(() => {
     setupPlayer();
@@ -118,6 +122,16 @@ export default function PlayerScreen() {
     await TrackPlayer.seekTo(value * progress.duration);
   };
 
+  const changePlaybackSpeed = async (newSpeed: number) => {
+    try {
+      await TrackPlayer.setRate(newSpeed);
+      setSpeed(newSpeed);
+      setShowSpeedModal(false);
+    } catch (error) {
+      console.log('Error changing playback speed:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#1E1E2D' }]} edges={['top']}>
       <ScrollView style={styles.scrollView}>
@@ -178,10 +192,7 @@ export default function PlayerScreen() {
               <TouchableOpacity style={styles.skipButton} onPress={skipBackward}>
                 <Text style={styles.skipButtonText}>15</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.playButton}
-                onPress={togglePlayPause}
-              >
+              <TouchableOpacity style={styles.playButton} onPress={togglePlayPause}>
                 <IconButton
                   icon={isPlaying ? 'pause' : 'play'}
                   size={32}
@@ -192,6 +203,15 @@ export default function PlayerScreen() {
                 <Text style={styles.skipButtonText}>30</Text>
               </TouchableOpacity>
             </View>
+
+            {/* 
+            hidden speed button
+            <TouchableOpacity 
+              style={styles.speedButton} 
+              onPress={() => setShowSpeedModal(true)}
+            >
+              <Text style={styles.speedButtonText}>{speed}x</Text>
+            </TouchableOpacity> */}
           </View>
 
           <TouchableOpacity style={styles.subscribeButton}>
@@ -205,6 +225,47 @@ export default function PlayerScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showSpeedModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSpeedModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>
+              Playback Speed
+            </Text>
+            <View style={styles.speedOptions}>
+              {PLAYBACK_SPEEDS.map((speedOption) => (
+                <TouchableOpacity
+                  key={speedOption}
+                  style={[
+                    styles.speedOption,
+                    speed === speedOption && styles.selectedSpeed,
+                  ]}
+                  onPress={() => changePlaybackSpeed(speedOption)}
+                >
+                  <Text style={[
+                    styles.speedOptionText,
+                    speed === speedOption && styles.selectedSpeedText,
+                  ]}>
+                    {speedOption}x
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Button
+              mode="contained"
+              onPress={() => setShowSpeedModal(false)}
+              style={styles.closeButton}
+            >
+              Close
+            </Button>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -349,5 +410,61 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  speedButton: {
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginTop: 16,
+  },
+  speedButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    padding: 24,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  speedOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 24,
+  },
+  speedOption: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  selectedSpeed: {
+    backgroundColor: '#4A90E2',
+  },
+  speedOptionText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  selectedSpeedText: {
+    color: '#FFFFFF',
+  },
+  closeButton: {
+    marginTop: 16,
   },
 }); 
