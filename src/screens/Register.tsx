@@ -31,25 +31,26 @@ export default function Register() {
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [secureConfirmTextEntry, setSecureConfirmTextEntry] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
-      // TODO: Show error message
+      setError('Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      // TODO: Show error message
+      setError('Passwords do not match');
       return;
     }
 
     try {
       setIsLoading(true);
+      setError('');
       await signUp(name, email, password);
-      // Navigation will be handled by AppNavigator
     } catch (error) {
       console.error('Registration error:', error);
-      // TODO: Show error message
+      setError('Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -58,11 +59,11 @@ export default function Register() {
   const handleGoogleRegister = async () => {
     try {
       setIsLoading(true);
+      setError('');
       await signInWithGoogle();
-      // Navigation will be handled by AppNavigator
     } catch (error) {
       console.error('Google registration error:', error);
-      // TODO: Show error message
+      setError('Google registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -86,12 +87,19 @@ export default function Register() {
           </View>
 
           <View style={styles.form}>
+            {error ? (
+              <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                {error}
+              </Text>
+            ) : null}
+
             <TextInput
               label="Name"
               value={name}
               onChangeText={setName}
               mode="outlined"
               style={styles.input}
+              disabled={isLoading}
             />
             <TextInput
               label="Email"
@@ -101,6 +109,7 @@ export default function Register() {
               keyboardType="email-address"
               autoCapitalize="none"
               style={styles.input}
+              disabled={isLoading}
             />
             <TextInput
               label="Password"
@@ -115,6 +124,7 @@ export default function Register() {
                 />
               }
               style={styles.input}
+              disabled={isLoading}
             />
             <TextInput
               label="Confirm Password"
@@ -129,6 +139,7 @@ export default function Register() {
                 />
               }
               style={styles.input}
+              disabled={isLoading}
             />
 
             <Button
@@ -136,6 +147,7 @@ export default function Register() {
               onPress={handleRegister}
               style={styles.registerButton}
               loading={isLoading}
+              disabled={isLoading}
             >
               Register
             </Button>
@@ -152,6 +164,7 @@ export default function Register() {
               onPress={handleGoogleRegister}
               style={styles.googleButton}
               loading={isLoading}
+              disabled={isLoading}
             >
               Register with Google
             </Button>
@@ -204,6 +217,10 @@ const styles = StyleSheet.create({
   registerButton: {
     marginTop: 8,
     paddingVertical: 6,
+  },
+  errorText: {
+    marginBottom: 16,
+    textAlign: 'center',
   },
   dividerContainer: {
     flexDirection: 'row',

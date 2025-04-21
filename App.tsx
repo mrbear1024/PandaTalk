@@ -17,6 +17,8 @@ import SearchScreen from './src/screens/SearchScreen';
 import Library from './src/screens/Library';
 import Profile from './src/screens/Profile';
 import EditProfile from './src/screens/EditProfile';
+import Login from './src/screens/Login';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -40,57 +42,66 @@ const theme = {
 function TabNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surfaceVariant,
-          borderTopColor: '#333',
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof MaterialCommunityIcons.glyphMap = 'home';
+
+          if (route.name === 'HomeTab') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'SearchTab') {
+            iconName = focused ? 'magnify' : 'magnify';
+          } else if (route.name === 'LibraryTab') {
+            iconName = focused ? 'book' : 'book-outline';
+          } else if (route.name === 'ProfileTab') {
+            iconName = focused ? 'account' : 'account-outline';
+          }
+
+          return (
+            <MaterialCommunityIcons name={iconName} size={size} color={color} />
+          );
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.surfaceVariant,
+        },
+      })}
+    >
+      <Tab.Screen name="HomeTab" component={PodcastHome} options={{ title: 'Home' }} />
+      <Tab.Screen name="SearchTab" component={SearchScreen} options={{ title: 'Search' }} />
+      <Tab.Screen name="LibraryTab" component={Library} options={{ title: 'Library' }} />
+      <Tab.Screen name="ProfileTab" component={Profile} options={{ title: 'Profile' }} />
+    </Tab.Navigator>
+  );
+}
+
+function Navigation() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null; // Or a loading screen
+  }
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
       }}
     >
-      <Tab.Screen
-        name="HomeTab"
-        component={PodcastHome}
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="SearchTab"
-        component={SearchScreen}
-        options={{
-          tabBarLabel: 'Search',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="magnify" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="LibraryTab"
-        component={Library}
-        options={{
-          tabBarLabel: 'Library',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="library-shelves" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="ProfileTab"
-        component={Profile}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="account" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+      {user ? (
+        <>
+          <Stack.Screen name="MainTabs" component={TabNavigator} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="PodcastDetail" component={PodcastDetail} />
+          <Stack.Screen name="AllEpisodes" component={AllEpisodes} />
+          <Stack.Screen name="Player" component={PlayerScreen} />
+        </>
+      ) : (
+        <Stack.Screen name="Login" component={Login} />
+      )}
+    </Stack.Navigator>
   );
 }
 
@@ -98,19 +109,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
-        <NavigationContainer>
-          <Stack.Navigator
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="MainTabs" component={TabNavigator} />
-            <Stack.Screen name="EditProfile" component={EditProfile} />
-            <Stack.Screen name="PodcastDetail" component={PodcastDetail} />
-            <Stack.Screen name="AllEpisodes" component={AllEpisodes} />
-            <Stack.Screen name="Player" component={PlayerScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <AuthProvider>
+          <NavigationContainer>
+            <Navigation />
+          </NavigationContainer>
+        </AuthProvider>
       </PaperProvider>
     </SafeAreaProvider>
   );

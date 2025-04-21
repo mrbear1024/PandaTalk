@@ -7,96 +7,84 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useTheme, Text, TextInput, Button } from 'react-native-paper';
+import { useTheme, Text, TextInput, Button, HelperText } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
-
-type RootStackParamList = {
-  Register: undefined;
-  Home: undefined;
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import type { NavigationProp } from '../types/navigation';
 
 export default function Login() {
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple, signInAsGuest, error, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState('');
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      // TODO: Show error message
-      return;
-    }
-
     try {
-      setIsLoading(true);
-      await signIn(email, password);
-      // Navigation will be handled by AppNavigator
+      setLocalError('');
+      await signIn({ email, password });
     } catch (error) {
-      console.error('Login error:', error);
-      // TODO: Show error message
-    } finally {
-      setIsLoading(false);
+      setLocalError('登录失败，请检查邮箱和密码');
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
-      setIsLoading(true);
       await signInWithGoogle();
-      // Navigation will be handled by AppNavigator
     } catch (error) {
       console.error('Google login error:', error);
-      // TODO: Show error message
-    } finally {
-      setIsLoading(false);
+      setLocalError('Failed to login with Google');
     }
   };
 
-  const handleAppleLogin = () => {
-    // TODO: Implement Apple login
-    console.log('Apple login');
+  const handleAppleLogin = async () => {
+    try {
+      await signInWithApple();
+    } catch (error) {
+      console.error('Apple login error:', error);
+      setLocalError('Failed to login with Apple');
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    try {
+      await signInAsGuest();
+    } catch (error) {
+      console.error('Guest login error:', error);
+      setLocalError('Failed to login as guest');
+    }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <KeyboardAvoidingView 
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}
+        style={styles.container}
       >
         <View style={styles.content}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require('../../assets/podcast-cover.png')}
-              style={styles.logo}
-            />
-            <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.primary }]}>
-              Podcast
-            </Text>
-          </View>
+          <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+            欢迎回来
+          </Text>
+          <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+            登录以继续使用播客应用
+          </Text>
 
           <View style={styles.form}>
             <TextInput
-              label="Email"
+              label="邮箱"
               value={email}
               onChangeText={setEmail}
-              mode="outlined"
-              keyboardType="email-address"
               autoCapitalize="none"
+              keyboardType="email-address"
               style={styles.input}
             />
             <TextInput
-              label="Password"
+              label="密码"
               value={password}
               onChangeText={setPassword}
-              mode="outlined"
               secureTextEntry={secureTextEntry}
               right={
                 <TextInput.Icon
@@ -107,51 +95,77 @@ export default function Login() {
               style={styles.input}
             />
 
+            {(error || localError) && (
+              <HelperText type="error" visible={true}>
+                {error || localError}
+              </HelperText>
+            )}
+
             <Button
               mode="contained"
               onPress={handleLogin}
-              style={styles.loginButton}
               loading={isLoading}
+              disabled={isLoading}
+              style={styles.button}
             >
-              Log in
+              登录
             </Button>
 
-            <View style={styles.dividerContainer}>
-              <View style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
-              <Text style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>or</Text>
-              <View style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
-            </View>
-
-            <View style={styles.socialButtons}>
-              <TouchableOpacity
-                style={[styles.socialButton, { backgroundColor: theme.colors.surface }]}
-                onPress={handleGoogleLogin}
-              >
-                <Image
-                  source={require('../../assets/google.png')}
-                  style={styles.socialIcon}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.socialButton, { backgroundColor: theme.colors.surface }]}
-                onPress={handleAppleLogin}
-              >
-                <Image
-                  source={require('../../assets/apple.png')}
-                  style={styles.socialIcon}
-                />
-              </TouchableOpacity>
-            </View>
+            <Button
+              mode="text"
+              onPress={() => {}}
+              style={styles.button}
+            >
+              忘记密码？
+            </Button>
           </View>
 
-          <View style={styles.footer}>
-            <Text style={{ color: theme.colors.onSurfaceVariant }}>
-              Don't have an account?{' '}
-            </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={{ color: theme.colors.primary }}>Register</Text>
+          <View style={styles.dividerContainer}>
+            <View style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+            <Text style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>or</Text>
+            <View style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+          </View>
+
+          <View style={styles.socialButtons}>
+            <TouchableOpacity
+              style={[styles.socialButton, { backgroundColor: theme.colors.surface }]}
+              onPress={handleGoogleLogin}
+              disabled={isLoading}
+            >
+              <Image
+                source={require('../../assets/google.png')}
+                style={styles.socialIcon}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.socialButton, { backgroundColor: theme.colors.surface }]}
+              onPress={handleAppleLogin}
+              disabled={isLoading}
+            >
+              <Image
+                source={require('../../assets/apple.png')}
+                style={styles.socialIcon}
+              />
             </TouchableOpacity>
           </View>
+
+          <Button
+            mode="outlined"
+            onPress={handleGuestLogin}
+            style={[styles.guestButton, { marginTop: 16 }]}
+            disabled={isLoading}
+          >
+            Continue as Guest
+          </Button>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={{ color: theme.colors.onSurfaceVariant }}>
+            Don't have an account?{' '}
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={{ color: theme.colors.primary }}>Register</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -162,35 +176,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
   content: {
     flex: 1,
     padding: 24,
     justifyContent: 'center',
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 16,
-  },
   title: {
-    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    textAlign: 'center',
+    marginBottom: 32,
   },
   form: {
-    marginBottom: 24,
+    width: '100%',
   },
   input: {
     marginBottom: 16,
   },
-  loginButton: {
+  button: {
     marginTop: 8,
-    paddingVertical: 6,
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -232,5 +238,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 24,
+  },
+  guestButton: {
+    marginTop: 16,
   },
 }); 
