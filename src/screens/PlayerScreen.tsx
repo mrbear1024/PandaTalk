@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Image, Dimensions, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Text, IconButton, useTheme, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { RouteProp, useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
 import TrackPlayer, { 
   useTrackPlayerEvents, 
@@ -13,6 +13,7 @@ import TrackPlayer, {
   AppKilledPlaybackBehavior,
   useProgress
 } from 'react-native-track-player';
+import { usePlayer } from '../contexts/PlayerContext';
 
 type PlayerScreenParams = {
   Player: {
@@ -31,6 +32,15 @@ const { width } = Dimensions.get('window');
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
+const mockTrack = {
+  id: '1',
+  title: 'Episode 10',
+  artist: 'Design Matters',
+  artwork: require('../../assets/podcast-cover.png'),
+  duration: 258, // 4:18 in seconds
+  url: 'https://example.com/episode10.mp3'
+};
+
 export default function PlayerScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -42,13 +52,28 @@ export default function PlayerScreen() {
   const progress = useProgress();
   const [speed, setSpeed] = useState(1.0);
   const [showSpeedModal, setShowSpeedModal] = useState(false);
+  const { setCurrentTrack, setIsPlayerVisible, currentTrack, minimizePlayer } = usePlayer();
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     setupPlayer();
+    setCurrentTrack(mockTrack);
+    setIsPlayerVisible(false);
+
     return () => {
-      TrackPlayer.reset();
+      if (isPlaying) {
+        setIsPlayerVisible(true);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (!isFocused && currentTrack) {
+      setIsPlayerVisible(true);
+    } else if (isFocused) {
+      setIsPlayerVisible(false);
+    }
+  }, [isFocused, currentTrack]);
 
   const setupPlayer = async () => {
     try {
@@ -59,24 +84,50 @@ export default function PlayerScreen() {
           waitForBuffer: true,
         });
         await TrackPlayer.updateOptions({
-          android: {
-            appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
-          },
           capabilities: [
             Capability.Play,
             Capability.Pause,
+            Capability.Stop,
+            Capability.SeekTo,
+            Capability.Skip,
             Capability.SkipToNext,
             Capability.SkipToPrevious,
           ],
           compactCapabilities: [
             Capability.Play,
             Capability.Pause,
-            Capability.SkipToNext,
-            Capability.SkipToPrevious,
+            Capability.Stop,
           ],
+          progressUpdateEventInterval: 1,
+          notificationCapabilities: [
+            Capability.Play,
+            Capability.Pause,
+            Capability.Stop,
+            Capability.SeekTo,
+          ],
+          android: {
+            appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback,
+          }
+        });
+
+        TrackPlayer.addEventListener(Event.RemotePlay, () => {
+          TrackPlayer.play();
+        });
+
+        TrackPlayer.addEventListener(Event.RemotePause, () => {
+          TrackPlayer.pause();
+        });
+
+        TrackPlayer.addEventListener(Event.RemoteStop, () => {
+          TrackPlayer.stop();
+        });
+
+        TrackPlayer.addEventListener(Event.RemoteSeek, async (event) => {
+          const position = await TrackPlayer.getPosition();
+          await TrackPlayer.seekTo(position);
         });
       }
-      // Reset the queue and add new track
+
       await TrackPlayer.reset();
       await TrackPlayer.add({
         id: '1',
@@ -87,7 +138,7 @@ export default function PlayerScreen() {
       });
       await TrackPlayer.play();
     } catch (error) {
-      console.log('Error setting up player:', error);
+      console.error('Failed to setup player:', error);
     }
   };
 

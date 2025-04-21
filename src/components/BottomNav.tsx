@@ -3,6 +3,8 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { usePlayer } from '../contexts/PlayerContext';
+import { Track } from '../contexts/PlayerContext';
 
 interface Props {
   selected: string;
@@ -20,6 +22,12 @@ const tabs = [
 
 export default function BottomNav({ selected, onSelect }: Props) {
   const theme = useTheme();
+  const { setCurrentTrack, setIsPlayerVisible } = usePlayer();
+
+  const handlePlayTrack = (track: Track) => {
+    setCurrentTrack(track);
+    setIsPlayerVisible(true);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.surfaceVariant }]}>  
@@ -48,6 +56,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#333',
     paddingVertical: 8,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 65,
+    zIndex: 1,
   },
   tab: {
     flex: 1,

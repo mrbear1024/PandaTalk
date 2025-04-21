@@ -31,6 +31,7 @@ interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -168,6 +169,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUp = async (name: string, email: string, password: string) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      // 模拟注册 API 调用
+      const { token, user } = await mockSignUpAPI({ name, email, password });
+      await AsyncStorage.setItem('authToken', token);
+      setState(prev => ({ ...prev, user, isLoading: false }));
+    } catch (error) {
+      setState(prev => ({ 
+        ...prev, 
+        error: '注册失败',
+        isLoading: false 
+      }));
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       ...state, 
@@ -176,7 +194,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateUser,
       signInWithGoogle,
       signInWithApple,
-      signInAsGuest
+      signInAsGuest,
+      signUp
     }}>
       {children}
     </AuthContext.Provider>
@@ -263,6 +282,27 @@ const mockGuestLoginAPI = async () => {
       id: 'guest',
       name: 'Guest User',
       email: 'guest@example.com',
+      avatar: require('../../assets/podcast-cover.png'),
+      stats: {
+        podcasts: 0,
+        episodes: 0,
+        listeningTime: '0h 0m'
+      }
+    }
+  };
+};
+
+const mockSignUpAPI = async (data: { name: string; email: string; password: string }) => {
+  // 模拟 API 延迟
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // 模拟注册成功
+  return {
+    token: 'mock-token',
+    user: {
+      id: Math.random().toString(36).substr(2, 9),
+      name: data.name,
+      email: data.email,
       avatar: require('../../assets/podcast-cover.png'),
       stats: {
         podcasts: 0,

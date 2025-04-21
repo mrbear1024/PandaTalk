@@ -20,6 +20,10 @@ import EditProfile from './src/screens/EditProfile';
 import Login from './src/screens/Login';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import TrackPlayer from 'react-native-track-player';
+import MiniPlayer from './src/components/MiniPlayer';
+import { View } from 'react-native';
+import { PlayerProvider } from './src/contexts/PlayerContext';
+import PlayerToolbar from './src/components/PlayerToolbar';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -118,9 +122,14 @@ export default function App() {
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
         <AuthProvider>
-          <NavigationContainer>
-            <Navigation />
-          </NavigationContainer>
+          <PlayerProvider>
+            <View style={{ flex: 1 }}>
+              <NavigationContainer>
+                <Navigation />
+                <PlayerToolbar />
+              </NavigationContainer>
+            </View>
+          </PlayerProvider>
         </AuthProvider>
       </PaperProvider>
     </SafeAreaProvider>
