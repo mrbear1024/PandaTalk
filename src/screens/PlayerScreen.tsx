@@ -87,9 +87,13 @@ export default function PlayerScreen() {
     }
   };
 
-  useTrackPlayerEvents([Event.PlaybackState], (event) => {
+  useTrackPlayerEvents([Event.PlaybackState, Event.PlaybackQueueEnded], async (event) => {
     if (event.type === Event.PlaybackState) {
       setIsPlaying(event.state === State.Playing);
+    }
+    if (event.type === Event.PlaybackQueueEnded) {
+      await TrackPlayer.seekTo(0);
+      setIsPlaying(false);
     }
   });
 
