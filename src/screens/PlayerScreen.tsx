@@ -50,10 +50,12 @@ export default function PlayerScreen() {
     }
   }, []);
 
-  // 只在页面聚焦时隐藏 MiniPlayer
+  // 只在页面聚焦时隐藏 MiniPlayer，失去焦点时显示
   useEffect(() => {
     if (isFocused) {
       setIsPlayerVisible(false);
+    } else {
+      setIsPlayerVisible(true);
     }
   }, [isFocused]);
 
