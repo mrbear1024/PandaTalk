@@ -2,12 +2,29 @@ import React from 'react';
 import { StyleSheet, View, TouchableOpacity, Image } from 'react-native';
 import { Text, IconButton, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import TrackPlayer, { usePlaybackState, State, useProgress } from 'react-native-track-player';
 import { usePlayer } from '../contexts/PlayerContext';
 
+type RootStackParamList = {
+  Player: {
+    podcast: {
+      title: string;
+      podcast: string;
+      image: any;
+      audioUrl: string;
+      description?: string;
+      currentTime?: number;
+      isPlaying?: boolean;
+    };
+  };
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function MiniPlayer() {
   const theme = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const playbackState = usePlaybackState();
   const progress = useProgress();
   const { currentTrack, isPlayerVisible } = usePlayer();
@@ -27,8 +44,17 @@ export default function MiniPlayer() {
   };
 
   const handlePress = () => {
-    // @ts-ignore
-    navigation.navigate('Player');
+    navigation.navigate('Player', {
+      podcast: {
+        title: currentTrack.title,
+        podcast: currentTrack.artist,
+        image: currentTrack.artwork,
+        audioUrl: currentTrack.url,
+        description: 'Episode description', // 如果有描述信息，可以从 currentTrack 中获取
+        currentTime: progress.position,
+        isPlaying: isPlaying
+      }
+    });
   };
 
   return (
@@ -88,6 +114,8 @@ const styles = StyleSheet.create({
     width: '100%',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   progressBar: {
     height: 2,

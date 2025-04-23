@@ -10,6 +10,9 @@ import { useTheme, Text, Button } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MiniPlayer from '../components/MiniPlayer';
+import { usePlayer } from '../contexts/PlayerContext';
+import type { Track } from '../contexts/PlayerContext';
 
 interface Episode {
   id: string;
@@ -79,79 +82,102 @@ export default function PodcastDetail() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const { podcast } = route.params as RouteParams;
-  
-  return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={() => navigation.goBack()}
-      >
-        <Icon name="arrow-left" size={24} color={theme.colors.onBackground} />
-      </TouchableOpacity>
-      
-      <View style={styles.header}>
-        <Image
-          source={podcast.image}
-          style={styles.coverImage}
-        />
-        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-          {podcast.title}
-        </Text>
-        <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-          {podcast.description}
-        </Text>
-        <Button
-          mode="contained"
-          style={styles.subscribeButton}
-          labelStyle={{ fontSize: 16 }}
-          onPress={() => {}}
-        >
-          SUBSCRIBE
-        </Button>
-      </View>
+  const { isPlayerVisible, playTrack } = usePlayer();
 
-      <View style={styles.episodesSection}>
-        <Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-          Episodes
-        </Text>
-        {episodes.map((episode) => (
-          <TouchableOpacity
-            key={episode.id}
-            style={[styles.episodeItem, { backgroundColor: theme.colors.surface }]}
-            onPress={() => navigation.navigate('Player', { 
-              podcast: {
-                ...episode,
-                podcast: podcast.title,
-                description: `Episode ${episode.title}`,
-                image: podcast.image,
-                audioUrl: episode.audioUrl
-              }
-            })}
+  const handlePlayEpisode = async (episode: Episode) => {
+    // 创建 Track 对象
+    const track: Track = {
+      id: episode.id,
+      title: episode.title,
+      artist: podcast.title,
+      artwork: podcast.image,
+      duration: parseInt(episode.duration.split(':')[0]) * 60 + parseInt(episode.duration.split(':')[1]),
+      url: episode.audioUrl
+    };
+
+    // 播放音频
+    await playTrack(track);
+  };
+
+  return (
+    <View style={styles.container}>
+      <ScrollView 
+        style={[styles.scrollView, { backgroundColor: theme.colors.background }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: isPlayerVisible ? 120 : 60 }
+        ]}
+      >
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-left" size={24} color={theme.colors.onBackground} />
+        </TouchableOpacity>
+        
+        <View style={styles.header}>
+          <Image
+            source={podcast.image}
+            style={styles.coverImage}
+          />
+          <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+            {podcast.title}
+          </Text>
+          <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+            {podcast.description}
+          </Text>
+          <Button
+            mode="contained"
+            style={styles.subscribeButton}
+            labelStyle={{ fontSize: 16 }}
+            onPress={() => {}}
           >
-            <View style={styles.episodeContent}>
-              <Icon name="play-circle" size={32} color={theme.colors.primary} />
-              <View style={styles.episodeInfo}>
-                <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                  {episode.title}
-                </Text>
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {episode.date}
+            SUBSCRIBE
+          </Button>
+        </View>
+
+        <View style={styles.episodesSection}>
+          <Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+            Episodes
+          </Text>
+          {episodes.map((episode) => (
+            <TouchableOpacity
+              key={episode.id}
+              style={[styles.episodeItem, { backgroundColor: theme.colors.surface }]}
+              onPress={() => handlePlayEpisode(episode)}
+            >
+              <View style={styles.episodeContent}>
+                <Icon name="play-circle" size={32} color={theme.colors.primary} />
+                <View style={styles.episodeInfo}>
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    {episode.title}
+                  </Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {episode.date}
+                  </Text>
+                </View>
+                <Text variant="bodyMedium" style={[styles.duration, { color: theme.colors.onSurfaceVariant }]}>
+                  {episode.duration}
                 </Text>
               </View>
-              <Text variant="bodyMedium" style={[styles.duration, { color: theme.colors.onSurfaceVariant }]}>
-                {episode.duration}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+      {isPlayerVisible && <MiniPlayer />}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 60,
   },
   backButton: {
     position: 'absolute',

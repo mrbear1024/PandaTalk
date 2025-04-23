@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useIsFocused } from '@react-navigation/native';
 import { usePlayer } from '../contexts/PlayerContext';
+import TrackPlayer from 'react-native-track-player';
 
 // 导入播放器组件
 import {
@@ -12,8 +13,6 @@ import {
   PlaybackSpeedModal,
   PlayerService,
   PLAYBACK_SPEEDS,
-  mockTrack,
-  PlayerScreenParams,
   togglePlayPause,
   skipForward,
   skipBackward,
@@ -21,34 +20,42 @@ import {
   changePlaybackSpeed
 } from '../components/player';
 
+type PlayerScreenParams = {
+  Player: {
+    podcast: {
+      title: string;
+      podcast: string;
+      description: string;
+      image: any;
+      audioUrl: string;
+      currentTime?: number;
+      isPlaying?: boolean;
+    };
+  };
+};
+
 export default function PlayerScreen() {
   const route = useRoute<RouteProp<PlayerScreenParams, 'Player'>>();
   const { podcast } = route.params;
   
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(podcast.isPlaying ?? false);
   const [speed, setSpeed] = useState(1.0);
   const [showSpeedModal, setShowSpeedModal] = useState(false);
-  const { setCurrentTrack, setIsPlayerVisible, currentTrack } = usePlayer();
+  const { setIsPlayerVisible, currentTrack } = usePlayer();
   const isFocused = useIsFocused();
 
   useEffect(() => {
-    setCurrentTrack(mockTrack);
-    setIsPlayerVisible(false);
-
-    return () => {
-      if (isPlaying) {
-        setIsPlayerVisible(true);
-      }
-    };
+    if (podcast.currentTime && podcast.currentTime > 0) {
+      TrackPlayer.seekTo(podcast.currentTime);
+    }
   }, []);
 
+  // 只在页面聚焦时隐藏 MiniPlayer
   useEffect(() => {
-    if (!isFocused && currentTrack) {
-      setIsPlayerVisible(true);
-    } else if (isFocused) {
+    if (isFocused) {
       setIsPlayerVisible(false);
     }
-  }, [isFocused, currentTrack]);
+  }, [isFocused]);
 
   const handlePlaybackStateChange = (playing: boolean) => {
     setIsPlaying(playing);
@@ -67,7 +74,8 @@ export default function PlayerScreen() {
   };
 
   const handleSeek = async (value: number) => {
-    await seekTo(value, podcast.duration ? parseInt(podcast.duration) : 0);
+    const duration = await TrackPlayer.getDuration();
+    await seekTo(value, duration || 0);
   };
 
   const handleSpeedChange = async (newSpeed: number) => {
@@ -94,7 +102,7 @@ export default function PlayerScreen() {
         <PlayerContent
           image={podcast.image}
           title={podcast.title}
-          subtitle="DESIGN MATTERS"
+          subtitle={podcast.podcast}
           description={podcast.description}
         />
         

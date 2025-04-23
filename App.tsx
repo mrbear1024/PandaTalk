@@ -1,33 +1,22 @@
 // App.tsx
-import React, { useEffect } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import {
-  MD3DarkTheme,
-  Provider as PaperProvider,
-} from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import PodcastHome from './src/screens/PodcastHome';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PaperProvider, MD3DarkTheme } from 'react-native-paper';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { PlayerProvider } from './src/contexts/PlayerContext';
+import TabNavigator from './src/navigation/TabNavigator';
+import Login from './src/screens/Login';
+import EditProfile from './src/screens/EditProfile';
 import PodcastDetail from './src/screens/PodcastDetail';
 import AllEpisodes from './src/screens/AllEpisodes';
 import PlayerScreen from './src/screens/PlayerScreen';
-import SearchScreen from './src/screens/SearchScreen';
-import Library from './src/screens/Library';
-import Profile from './src/screens/Profile';
-import EditProfile from './src/screens/EditProfile';
-import Login from './src/screens/Login';
-import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import TrackPlayer from 'react-native-track-player';
-import MiniPlayer from './src/components/MiniPlayer';
-import { View } from 'react-native';
-import { PlayerProvider } from './src/contexts/PlayerContext';
-import PlayerToolbar from './src/components/PlayerToolbar';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
 
+// 定义主题
 const theme = {
   ...MD3DarkTheme,
   colors: {
@@ -44,50 +33,8 @@ const theme = {
   },
 };
 
-function TabNavigator() {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof MaterialCommunityIcons.glyphMap = 'home';
-
-          if (route.name === 'HomeTab') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'SearchTab') {
-            iconName = focused ? 'magnify' : 'magnify';
-          } else if (route.name === 'LibraryTab') {
-            iconName = focused ? 'book' : 'book-outline';
-          } else if (route.name === 'ProfileTab') {
-            iconName = focused ? 'account' : 'account-outline';
-          }
-
-          return (
-            <MaterialCommunityIcons name={iconName} size={size} color={color} />
-          );
-        },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.surfaceVariant,
-        },
-      })}
-    >
-      <Tab.Screen name="HomeTab" component={PodcastHome} options={{ title: 'Home' }} />
-      <Tab.Screen name="SearchTab" component={SearchScreen} options={{ title: 'Search' }} />
-      <Tab.Screen name="LibraryTab" component={Library} options={{ title: 'Library' }} />
-      <Tab.Screen name="ProfileTab" component={Profile} options={{ title: 'Profile' }} />
-    </Tab.Navigator>
-  );
-}
-
 function Navigation() {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return null; // Or a loading screen
-  }
+  const { isAuthenticated } = useAuth();
 
   return (
     <Stack.Navigator
@@ -95,7 +42,7 @@ function Navigation() {
         headerShown: false,
       }}
     >
-      {user ? (
+      {isAuthenticated ? (
         <>
           <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen name="EditProfile" component={EditProfile} />
@@ -111,13 +58,6 @@ function Navigation() {
 }
 
 export default function App() {
-  useEffect(() => {
-    const setup = async () => {
-      await TrackPlayer.setupPlayer();
-    };
-    setup();
-  }, []);
-
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
@@ -126,7 +66,6 @@ export default function App() {
             <View style={{ flex: 1 }}>
               <NavigationContainer>
                 <Navigation />
-                <PlayerToolbar />
               </NavigationContainer>
             </View>
           </PlayerProvider>

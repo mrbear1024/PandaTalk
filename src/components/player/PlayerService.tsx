@@ -3,9 +3,8 @@ import TrackPlayer, {
   useTrackPlayerEvents, 
   Event, 
   State,
-  Capability,
-  AppKilledPlaybackBehavior,
 } from 'react-native-track-player';
+import { usePlayer } from '../../contexts/PlayerContext';
 
 type PlayerServiceProps = {
   audioUrl: string;
@@ -22,13 +21,26 @@ export default function PlayerService({
   artwork,
   onPlaybackStateChange,
 }: PlayerServiceProps) {
-  useEffect(() => {
-    setupPlayer();
+  const { currentTrack } = usePlayer();
 
-    return () => {
-      // 清理工作
+  // 只在当前音频 URL 与正在播放的音频 URL 不同时才设置新的音频
+  useEffect(() => {
+    const setupTrack = async () => {
+      try {
+        // 检查当前是否有音频在播放，且 URL 相同
+        if (currentTrack && currentTrack.url === audioUrl) {
+          // 如果是同一个音频，不需要重新设置
+          const state = await TrackPlayer.getState();
+          onPlaybackStateChange(state === State.Playing);
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to setup track:', error);
+      }
     };
-  }, []);
+
+    setupTrack();
+  }, [audioUrl, title, artist, artwork]);
 
   useTrackPlayerEvents([Event.PlaybackState, Event.PlaybackQueueEnded], async (event) => {
     if (event.type === Event.PlaybackState) {
@@ -39,73 +51,6 @@ export default function PlayerService({
       onPlaybackStateChange(false);
     }
   });
-
-  const setupPlayer = async () => {
-    try {
-      const state = await TrackPlayer.getState();
-      if (state === undefined) {
-        await TrackPlayer.setupPlayer({
-          autoHandleInterruptions: true,
-          waitForBuffer: true,
-        });
-        await TrackPlayer.updateOptions({
-          capabilities: [
-            Capability.Play,
-            Capability.Pause,
-            Capability.Stop,
-            Capability.SeekTo,
-            Capability.Skip,
-            Capability.SkipToNext,
-            Capability.SkipToPrevious,
-          ],
-          compactCapabilities: [
-            Capability.Play,
-            Capability.Pause,
-            Capability.Stop,
-          ],
-          progressUpdateEventInterval: 1,
-          notificationCapabilities: [
-            Capability.Play,
-            Capability.Pause,
-            Capability.Stop,
-            Capability.SeekTo,
-          ],
-          android: {
-            appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback,
-          }
-        });
-
-        TrackPlayer.addEventListener(Event.RemotePlay, () => {
-          TrackPlayer.play();
-        });
-
-        TrackPlayer.addEventListener(Event.RemotePause, () => {
-          TrackPlayer.pause();
-        });
-
-        TrackPlayer.addEventListener(Event.RemoteStop, () => {
-          TrackPlayer.stop();
-        });
-
-        TrackPlayer.addEventListener(Event.RemoteSeek, async (event) => {
-          const position = await TrackPlayer.getPosition();
-          await TrackPlayer.seekTo(position);
-        });
-      }
-
-      await TrackPlayer.reset();
-      await TrackPlayer.add({
-        id: '1',
-        url: audioUrl,
-        title: title,
-        artist: artist,
-        artwork: artwork,
-      });
-      await TrackPlayer.play();
-    } catch (error) {
-      console.error('Failed to setup player:', error);
-    }
-  };
 
   return null; // 这是一个服务组件，不渲染任何UI
 } 
