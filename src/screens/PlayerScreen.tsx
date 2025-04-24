@@ -10,17 +10,13 @@ import Video, { VideoRef } from 'react-native-video';
 import {
   PlayerHeader,
   PlayerContent,
-  PlayerControls,
   PlaybackSpeedModal,
   PlayerService,
   PLAYBACK_SPEEDS,
-  togglePlayPause,
-  skipForward,
-  skipBackward,
-  seekTo,
   changePlaybackSpeed
 } from '../components/player';
 import VideoPlayer, { VideoPlayerRef } from '../components/player/VideoPlayer';
+import AudioPlayer from '../components/player/AudioPlayer';
 
 type PlayerScreenParams = {
   Player: {
@@ -44,7 +40,6 @@ export default function PlayerScreen() {
   
   console.log('PlayerScreen mounted with podcast:', podcast);
   
-  const [isPlaying, setIsPlaying] = useState(podcast.isPlaying ?? false);
   const [speed, setSpeed] = useState(1.0);
   const [showSpeedModal, setShowSpeedModal] = useState(false);
   const [showVideo, setShowVideo] = useState(!!podcast.videoUrl);
@@ -77,23 +72,8 @@ export default function PlayerScreen() {
     if (isVideoPlaying) {
       console.log('Pausing audio track');
       TrackPlayer.pause();
-      setIsPlaying(false);
     }
   }, [isVideoPlaying]);
-
-  // 当音频开始播放时，暂停视频
-  useEffect(() => {
-    console.log('isPlaying changed:', isPlaying);
-    if (isPlaying && !isVideoPlaying) {
-      console.log('Pausing video');
-      setIsVideoPlaying(false);
-    }
-  }, [isPlaying]);
-
-  const handlePlaybackStateChange = (playing: boolean) => {
-    console.log('Audio playback state changed:', playing);
-    setIsPlaying(playing);
-  };
 
   const handleVideoPlaybackStateChange = (playing: boolean) => {
     console.log('Video playback state changed:', playing);
@@ -113,53 +93,6 @@ export default function PlayerScreen() {
     }
   };
 
-  const handlePlayPause = async () => {
-    console.log('Play/Pause pressed, showVideo:', showVideo, 'isVideoPlaying:', isVideoPlaying);
-    if (showVideo && podcast.videoUrl) {
-      // 如果视频正在播放，则暂停视频
-      console.log('Toggling video playback');
-      setIsVideoPlaying(!isVideoPlaying);
-    } else {
-      // 否则，播放/暂停音频
-      console.log('Toggling audio playback');
-      await togglePlayPause();
-    }
-  };
-
-  const handleSkipForward = async () => {
-    if (showVideo && podcast.videoUrl && videoRef.current) {
-      // 视频快进 10 秒
-      const newTime = Math.min(videoProgress + 10, videoDuration);
-      videoRef.current.seek(newTime);
-    } else {
-      await skipForward();
-    }
-  };
-
-  const handleSkipBackward = async () => {
-    if (showVideo && podcast.videoUrl && videoRef.current) {
-      // 视频快退 10 秒
-      const newTime = Math.max(videoProgress - 10, 0);
-      videoRef.current.seek(newTime);
-    } else {
-      await skipBackward();
-    }
-  };
-
-  const handleSeek = async (value: number) => {
-    if (showVideo && podcast.videoUrl && videoRef.current) {
-      // 视频跳转到指定位置
-      videoRef.current.seek(value);
-      // 确保视频继续播放
-      if (!isVideoPlaying) {
-        setIsVideoPlaying(true);
-      }
-    } else {
-      const duration = await TrackPlayer.getDuration();
-      await seekTo(value, duration || 0);
-    }
-  };
-
   const handleSpeedChange = async (newSpeed: number) => {
     const success = await changePlaybackSpeed(newSpeed);
     if (success) {
@@ -172,24 +105,6 @@ export default function PlayerScreen() {
     setShowVideo(!showVideo);
   };
 
-  // 获取当前播放进度
-  const getCurrentProgress = () => {
-    if (showVideo && podcast.videoUrl) {
-      return videoProgress;
-    } else {
-      return currentTrack?.duration ? (currentTrack.duration * 0.5) : 0; // 假设进度为总时长的一半
-    }
-  };
-
-  // 获取当前总时长
-  const getCurrentDuration = () => {
-    if (showVideo && podcast.videoUrl) {
-      return videoDuration;
-    } else {
-      return currentTrack?.duration || 0;
-    }
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#1E1E2D' }]} edges={['top']}>
       <PlayerService
@@ -197,7 +112,7 @@ export default function PlayerScreen() {
         title={podcast.title}
         artist={podcast.podcast}
         artwork={podcast.image}
-        onPlaybackStateChange={handlePlaybackStateChange}
+        onPlaybackStateChange={() => {}}
       />
       
       <ScrollView style={styles.scrollView}>
@@ -215,25 +130,22 @@ export default function PlayerScreen() {
           />
         ) : null}
         
-        
         <PlayerContent
           image={podcast.image}
           title={podcast.title}
           subtitle={podcast.podcast}
           description={podcast.description}
         />
+        
         {!showVideo && (
-          <PlayerControls
-            isPlaying={isPlaying}
-            onPlayPause={handlePlayPause}
-            onSkipForward={handleSkipForward}
-            onSkipBackward={handleSkipBackward}
-            onSeek={handleSeek}
-            progress={getCurrentProgress()}
-            duration={getCurrentDuration()}
+          <AudioPlayer
+            audioUrl={podcast.audioUrl}
+            title={podcast.title}
+            artist={podcast.podcast}
+            artwork={podcast.image}
+            onPlaybackStateChange={() => {}}
           />
         )}
-      
       </ScrollView>
 
       <PlaybackSpeedModal

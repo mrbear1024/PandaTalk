@@ -165,12 +165,23 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({
   const handleSliderSlidingComplete = (value: number) => {
     setIsSliding(false);
     if (videoRef.current) {
-      videoRef.current.seek(value);
-      // 确保视频继续播放
-      if (!isPlaying) {
-        setIsPlaying(true);
-        onPlaybackStateChange?.(true);
+      // 先暂停视频
+      const wasPlaying = isPlaying;
+      if (wasPlaying) {
+        setIsPlaying(false);
+        onPlaybackStateChange?.(false);
       }
+      
+      // 设置新的位置
+      videoRef.current.seek(value);
+      
+      // 短暂延迟后恢复播放状态
+      setTimeout(() => {
+        if (wasPlaying) {
+          setIsPlaying(true);
+          onPlaybackStateChange?.(true);
+        }
+      }, 100);
     }
     // 重置定时器
     resetControlsTimeout();
@@ -251,6 +262,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({
               playWhenInactive={false}
               ignoreSilentSwitch="ignore"
               paused={!isPlaying}
+              repeat={false}
               selectedTextTrack={{
                 type: 'language' as SelectedTrackType,
                 value: 'zh'
