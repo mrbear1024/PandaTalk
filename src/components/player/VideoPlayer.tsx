@@ -39,6 +39,16 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({
   const [showControls, setShowControls] = useState(true);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { currentTrack } = usePlayer();
+  const [bufferProgress, setBufferProgress] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
+
+  // 预加载配置
+  const bufferConfig = {
+    minBufferMs: 15000, // 最小缓冲时间（毫秒）
+    maxBufferMs: 50000, // 最大缓冲时间（毫秒）
+    bufferForPlaybackMs: 2500, // 开始播放所需的最小缓冲时间
+    bufferForPlaybackAfterRebufferMs: 5000, // 重新缓冲后开始播放所需的最小缓冲时间
+  };
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -218,6 +228,18 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({
     }
   };
 
+  const handleBuffer = (data: any) => {
+    if (data.isBuffering) {
+      setIsLoading(true);
+    } else {
+      setIsLoading(false);
+    }
+    // 更新缓冲进度
+    if (data.bufferProgress) {
+      setBufferProgress(data.bufferProgress);
+    }
+  };
+
   return (
     <View style={[
       styles.container, 
@@ -252,7 +274,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({
               onProgress={handleProgress}
               onEnd={handleEnd}
               onError={handleError}
-              onBuffer={() => {}}
+              onBuffer={handleBuffer}
               onReadyForDisplay={() => {
                 console.log('Video ready for display');
                 setIsLoading(false);
@@ -263,6 +285,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({
               ignoreSilentSwitch="ignore"
               paused={!isPlaying}
               repeat={false}
+              bufferConfig={bufferConfig}
               selectedTextTrack={{
                 type: 'language' as SelectedTrackType,
                 value: 'zh'
@@ -286,23 +309,67 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({
           {showControls && (
             <View style={styles.controlsOverlay}>
               {/* 进度条 */}
-              <View style={styles.progressContainer}>
+              <View 
+                style={styles.progressContainer}
+                onStartShouldSetResponder={() => true}
+                onMoveShouldSetResponder={() => true}
+                onResponderGrant={() => {
+                  setIsHovering(true);
+                  // 显示控制条
+                  setShowControls(true);
+                  // 重置定时器
+                  resetControlsTimeout();
+                }}
+                onResponderRelease={() => {
+                  setIsHovering(false);
+                  resetControlsTimeout();
+                }}
+              >
+                {/* 进度条背景 */}
+                <View style={styles.progressBackground} />
+                {/* 播放进度条 - 放在底层 */}
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    styles.playProgress, 
+                    { width: `${(currentTime / (duration || 1)) * 100}%` }
+                  ]} 
+                />
+                {/* 缓冲进度条 - 覆盖在播放进度条上 */}
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    styles.bufferProgress, 
+                    { width: `${bufferProgress * 100}%` }
+                  ]} 
+                />
                 <Slider
                   style={styles.slider}
                   minimumValue={0}
                   maximumValue={duration || 1}
                   value={currentTime}
-                  minimumTrackTintColor="#FFFFFF"
-                  maximumTrackTintColor="rgba(255,255,255,0.5)"
-                  thumbTintColor="#FFFFFF"
+                  minimumTrackTintColor="transparent"
+                  maximumTrackTintColor="transparent"
+                  thumbTintColor={isHovering ? "#FF0000" : "transparent"}
                   onValueChange={handleSliderValueChange}
                   onSlidingStart={handleSliderSlidingStart}
                   onSlidingComplete={handleSliderSlidingComplete}
                 />
-                <View style={styles.timeContainer}>
-                  <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-                  <Text style={styles.timeText}>{formatTime(duration)}</Text>
-                </View>
+
+                {/* 预览时间 */}
+                {isHovering && (
+                  <View style={[
+                    styles.timePreview, 
+                    { 
+                      left: `${(currentTime / (duration || 1)) * 100}%`,
+                      transform: [{ translateX: -25 }]
+                    }
+                  ]}>
+                    <Text style={styles.timePreviewText}>
+                      {formatTime(currentTime)}
+                    </Text>
+                  </View>
+                )}
               </View>
               
               {/* 全屏按钮 */}
@@ -323,7 +390,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({
       )}
       {isLoading && !error && (
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>加载中...</Text>
+          <Text style={styles.loadingText}>加载中... {Math.round(bufferProgress * 100)}%</Text>
         </View>
       )}
     </View>
@@ -396,17 +463,51 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     width: '100%',
+    position: 'relative',
+    height: 36,
+    marginBottom: -10,
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: 36,
+    position: 'absolute',
+    top: 0,
+    zIndex: 3,
   },
-  timeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: -8,
+  progressBar: {
+    position: 'absolute',
+    left: 0,
+    height: 3,
+    bottom: 18,
+    borderRadius: 1.5,
   },
-  timeText: {
+  progressBackground: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 3,
+    bottom: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 1.5,
+  },
+  bufferProgress: {
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    zIndex: 2,
+  },
+  playProgress: {
+    backgroundColor: '#FF0000', // YouTube 红色
+    zIndex: 1,
+  },
+  timePreview: {
+    position: 'absolute',
+    bottom: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    zIndex: 4,
+  },
+  timePreviewText: {
     color: 'white',
     fontSize: 12,
   },
