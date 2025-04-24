@@ -1,8 +1,8 @@
-import React from 'react';
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
-import { Text, IconButton } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { useProgress } from 'react-native-track-player';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTheme } from 'react-native-paper';
 
 type PlayerControlsProps = {
   isPlaying: boolean;
@@ -10,12 +10,8 @@ type PlayerControlsProps = {
   onSkipForward: () => void;
   onSkipBackward: () => void;
   onSeek: (value: number) => void;
-};
-
-export const formatTime = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  progress?: number;
+  duration?: number;
 };
 
 export default function PlayerControls({
@@ -24,40 +20,82 @@ export default function PlayerControls({
   onSkipForward,
   onSkipBackward,
   onSeek,
+  progress = 0,
+  duration = 0,
 }: PlayerControlsProps) {
-  const progress = useProgress();
+  const theme = useTheme();
+  const [sliderValue, setSliderValue] = useState(0);
+  const [isSliding, setIsSliding] = useState(false);
+
+  // 当进度或时长变化时更新滑块值
+  useEffect(() => {
+    if (!isSliding && duration > 0) {
+      setSliderValue(progress);
+    }
+  }, [progress, duration, isSliding]);
+
+  const handleSliderValueChange = (value: number) => {
+    setSliderValue(value);
+  };
+
+  const handleSliderSlidingStart = () => {
+    setIsSliding(true);
+  };
+
+  const handleSliderSlidingComplete = (value: number) => {
+    setIsSliding(false);
+    onSeek(value);
+  };
+
+  // 格式化时间为 mm:ss 格式
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
 
   return (
-    <View style={styles.controls}>
+    <View style={styles.container}>
       <Slider
-        value={progress.position / (progress.duration || 1)}
-        onValueChange={onSeek}
         style={styles.slider}
         minimumValue={0}
-        maximumValue={1}
-        minimumTrackTintColor="#4A90E2"
-        maximumTrackTintColor="#4A4A4A"
-        thumbTintColor="#4A90E2"
+        maximumValue={duration || 100}
+        value={sliderValue}
+        minimumTrackTintColor={theme.colors.primary}
+        maximumTrackTintColor={theme.colors.surfaceVariant}
+        thumbTintColor={theme.colors.primary}
+        onValueChange={handleSliderValueChange}
+        onSlidingStart={handleSliderSlidingStart}
+        onSlidingComplete={handleSliderSlidingComplete}
       />
       
-      <View style={styles.timeInfo}>
-        <Text style={styles.timeText}>{formatTime(progress.position)}</Text>
-        <Text style={styles.timeText}>{formatTime(progress.duration)}</Text>
+      <View style={styles.timeContainer}>
+        <Text style={[styles.timeText, { color: theme.colors.onSurfaceVariant }]}>
+          {formatTime(sliderValue)}
+        </Text>
+        <Text style={[styles.timeText, { color: theme.colors.onSurfaceVariant }]}>
+          {formatTime(duration)}
+        </Text>
       </View>
-
-      <View style={styles.buttons}>
-        <TouchableOpacity style={styles.skipButton} onPress={onSkipBackward}>
-          <Text style={styles.skipButtonText}>15</Text>
+      
+      <View style={styles.controlsContainer}>
+        <TouchableOpacity onPress={onSkipBackward} style={styles.controlButton}>
+          {/* @ts-ignore */}
+          <Icon name="rewind-10" size={32} color={theme.colors.onSurface} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.playButton} onPress={onPlayPause}>
-          <IconButton
-            icon={isPlaying ? 'pause' : 'play'}
-            size={32}
-            iconColor="#1E1E2D"
+        
+        <TouchableOpacity onPress={onPlayPause} style={styles.playButton}>
+          {/* @ts-ignore */}
+          <Icon 
+            name={isPlaying ? "pause-circle" : "play-circle"} 
+            size={64} 
+            color={theme.colors.primary} 
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.skipButton} onPress={onSkipForward}>
-          <Text style={styles.skipButtonText}>30</Text>
+        
+        <TouchableOpacity onPress={onSkipForward} style={styles.controlButton}>
+          {/* @ts-ignore */}
+          <Icon name="fast-forward-10" size={32} color={theme.colors.onSurface} />
         </TouchableOpacity>
       </View>
     </View>
@@ -65,50 +103,31 @@ export default function PlayerControls({
 }
 
 const styles = StyleSheet.create({
-  controls: {
-    width: '100%',
-    marginTop: 'auto',
-    paddingBottom: 20,
+  container: {
+    padding: 16,
   },
   slider: {
     width: '100%',
     height: 40,
   },
-  timeInfo: {
+  timeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: -16,
-    marginBottom: 24,
+    marginTop: -8,
   },
   timeText: {
-    color: '#9E9E9E',
-    fontSize: 14,
+    fontSize: 12,
   },
-  buttons: {
+  controlsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 48,
+    marginTop: 8,
+  },
+  controlButton: {
+    padding: 8,
   },
   playButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  skipButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
-  },
-  skipButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
+    padding: 8,
   },
 }); 

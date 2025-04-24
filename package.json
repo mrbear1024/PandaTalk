@@ -28,12 +28,14 @@
     "react": "18.3.1",
     "react-native": "0.76.9",
     "react-native-gesture-handler": "~2.20.2",
+    "react-native-orientation-locker": "^1.7.0",
     "react-native-paper": "^5.13.3",
     "react-native-reanimated": "~3.16.1",
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "^4.10.0",
     "react-native-track-player": "^4.0.1",
-    "react-native-vector-icons": "^10.2.0"
+    "react-native-vector-icons": "^10.2.0",
+    "react-native-video": "^6.13.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

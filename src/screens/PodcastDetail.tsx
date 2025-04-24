@@ -20,6 +20,9 @@ interface Episode {
   date: string;
   duration: string;
   audioUrl: string;
+  
+  videoUrl?: string;
+  subtitleUrl?: string;
 }
 
 interface RouteParams {
@@ -40,6 +43,8 @@ type RootStackParamList = {
       duration: string;
       image: any;
       audioUrl: string;
+      videoUrl?: string;
+      subtitleUrl?: string;
     };
   };
 };
@@ -52,29 +57,75 @@ const episodes: Episode[] = [
     title: 'Episode 10',
     date: 'Mar 25, 2023',
     duration: '45:00',
-    audioUrl: 'https://audio.owlsay.com/jayflac.flac'
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    // videoUrl: 'https://videos.owlsay.com/principles.mp4',
+    subtitleUrl: 'https://subtitles.owlsay.com/principles.vtt'
   },
   {
     id: '9',
     title: 'Episode 9',
     date: 'Mar 17, 2023',
     duration: '42:30',
-    audioUrl: 'https://audio.owlsay.com/jayflac.flac'
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    // videoUrl: 'https://videos.owlsay.com/principles.mp4',
+    subtitleUrl: 'https://subtitles.owlsay.com/principles.vtt'
   },
   {
     id: '8',
     title: 'Episode 8',
     date: 'Mar 10, 2023',
     duration: '38:15',
-    audioUrl: 'https://audio.owlsay.com/jayflac.flac'
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    videoUrl: 'https://videos.owlsay.com/principles.mp4'
   },
   {
     id: '7',
     title: 'Episode 7',
     date: 'Mar 3, 2023',
     duration: '41:20',
-    audioUrl: 'https://audio.owlsay.com/jayflac.flac'
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    videoUrl: 'https://videos.owlsay.com/principles.mp4'
   },
+  {
+    id: '6',
+    title: 'Episode 6',
+    date: 'Feb 24, 2023', 
+    duration: '35:45',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    videoUrl: 'https://videos.owlsay.com/principles.mp4'
+  },
+  {
+    id: '5', 
+    title: 'Episode 5',
+    date: 'Feb 17, 2023',
+    duration: '44:20',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    videoUrl: 'https://videos.owlsay.com/principles.mp4'
+  },
+  {
+    id: '4',
+    title: 'Episode 4', 
+    date: 'Feb 10, 2023',
+    duration: '39:15',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    videoUrl: 'https://videos.owlsay.com/principles.mp4'
+  },
+  {
+    id: '3',
+    title: 'Episode 3',
+    date: 'Feb 3, 2023',
+    duration: '42:30',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    videoUrl: 'https://videos.owlsay.com/principles.mp4'
+  },
+  {
+    id: '2',
+    title: 'Episode 2',
+    date: 'Jan 27, 2023',
+    duration: '37:50',
+    audioUrl: 'https://audio.owlsay.com/jayflac.flac',
+    videoUrl: 'https://videos.owlsay.com/principles.mp4'
+  }
 ];
 
 export default function PodcastDetail() {
@@ -97,6 +148,20 @@ export default function PodcastDetail() {
 
     // 播放音频
     await playTrack(track);
+    
+    // 导航到播放器页面
+    navigation.navigate('Player', {
+      podcast: {
+        title: episode.title,
+        podcast: podcast.title,
+        description: podcast.description,
+        duration: episode.duration,
+        image: podcast.image,
+        audioUrl: episode.audioUrl,
+        videoUrl: episode.videoUrl,
+        subtitleUrl: episode.subtitleUrl,
+      }
+    });
   };
 
   return (
@@ -112,6 +177,7 @@ export default function PodcastDetail() {
           style={styles.backButton} 
           onPress={() => navigation.goBack()}
         >
+          {/* @ts-ignore */}
           <Icon name="arrow-left" size={24} color={theme.colors.onBackground} />
         </TouchableOpacity>
         
@@ -147,6 +213,7 @@ export default function PodcastDetail() {
               onPress={() => handlePlayEpisode(episode)}
             >
               <View style={styles.episodeContent}>
+                {/* @ts-ignore */}
                 <Icon name="play-circle" size={32} color={theme.colors.primary} />
                 <View style={styles.episodeInfo}>
                   <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
