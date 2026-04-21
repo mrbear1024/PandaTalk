@@ -38,7 +38,7 @@
 
 我计划继续 Building in Public：
 
-- **X**：每周至少 3 条 [build log](https://x.com/)
+- **X**：每周至少 3 条 [build log](https://x.com/pandatalk8)
 - **公众号**：每月 1~2 篇长文
 - **这个主页**：沉淀所有「值得被找到」的内容
 

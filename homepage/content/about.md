@@ -22,8 +22,9 @@
 
 如果你对 AI 产品 / 独立开发 / 出海感兴趣，欢迎和我聊聊：
 
-- X: [@your_handle](https://x.com/)
+- X: [@pandatalk8](https://x.com/pandatalk8)
 - 公众号：Panda 的 AI 笔记
-- Email: hi@xlearnity.ai
+- Email: mrbear1024@gmail.com
+- 项目：[xlearnity.ai](https://xlearnity.ai)
 
 > 做产品是一场长跑，写作是我给自己的刹车与加油站。

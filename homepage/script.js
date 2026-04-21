@@ -98,7 +98,7 @@
           <a class="btn primary" href="https://xlearnity.ai" target="_blank" rel="noopener">🚀 访问 xlearnity.ai</a>
           <a class="btn" href="#/articles">📝 看文章</a>
           <a class="btn" href="#/wechat">💬 关注公众号</a>
-          <a class="btn" href="https://x.com/" target="_blank" rel="noopener">𝕏 在 X 上关注我</a>
+          <a class="btn" href="https://x.com/pandatalk8" target="_blank" rel="noopener">𝕏 在 X 上关注我</a>
         </div>
       </section>
 

@@ -17,9 +17,9 @@ window.SITE_DATA = {
     },
     {
       title: "X / Twitter",
-      sub: "日常思考 · 产品进度 · 海外观察",
+      sub: "@pandatalk8 · 日常思考 · 产品进度",
       icon: "𝕏",
-      href: "https://x.com/",
+      href: "https://x.com/pandatalk8",
     },
     {
       title: "微信公众号",
@@ -29,9 +29,9 @@ window.SITE_DATA = {
     },
     {
       title: "Email",
-      sub: "hi@xlearnity.ai",
+      sub: "mrbear1024@gmail.com",
       icon: "✉️",
-      href: "mailto:hi@xlearnity.ai",
+      href: "mailto:mrbear1024@gmail.com",
     },
   ],
 
